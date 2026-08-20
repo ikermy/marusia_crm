@@ -1,0 +1,160 @@
+openapi: 3.0.3
+info:
+  title: marusia_crm HTTP API
+  description: HTTP API сервиса интеграции CRM.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: Health
+  - name: Monitoring
+  - name: CRM
+  - name: OAuth
+security:
+  - UserID: []
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Проверить состояние сервиса
+      security: []
+      responses:
+        '200': {description: Сервис доступен}
+  /v1/crm/health:
+    get:
+      tags: [Health]
+      summary: Проверить состояние CRM-сервиса
+      security: []
+      responses:
+        '200': {description: Сервис доступен}
+  /metrics:
+    get:
+      tags: [Monitoring]
+      summary: Получить Prometheus-метрики
+      security: []
+      responses:
+        '200':
+          description: Метрики Prometheus
+          content:
+            text/plain: {schema: {type: string}}
+  /v1/crm/api/{resource}:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
+    get:
+      tags: [CRM]
+      summary: Получить ресурс CRM
+      responses:
+        '200': {description: Успешный ответ}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    post:
+      tags: [CRM]
+      summary: Создать или изменить ресурс CRM
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonObject'
+      responses:
+        '200': {description: Успешный ответ}
+        '201': {description: Ресурс создан}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /v1/crm/api/{resource}/{crm_type}:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/CRMType'
+    get:
+      tags: [CRM]
+      summary: Получить ресурс CRM по типу CRM
+      responses:
+        '200': {description: Успешный ответ}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    post:
+      tags: [CRM]
+      summary: Сохранить ресурс CRM
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonObject'
+      responses:
+        '200': {description: Успешный ответ}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    delete:
+      tags: [CRM]
+      summary: Удалить ресурс CRM
+      responses:
+        '200': {description: Успешный ответ}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /v1/crm/oauth/amocrm/auth:
+    post:
+      tags: [OAuth]
+      summary: Авторизовать AmoCRM
+      responses:
+        '200': {description: Успешный ответ}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /v1/crm/oauth/amocrm/refresh:
+    post:
+      tags: [OAuth]
+      summary: Обновить токен AmoCRM
+      responses:
+        '200': {description: Успешный ответ}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /v1/crm/oauth/amocrm/callback:
+    get:
+      tags: [OAuth]
+      summary: Callback AmoCRM
+      security: []
+      responses:
+        '200': {description: Callback обработан}
+  /v1/crm/mock/oauth/amocrm/auth:
+    post:
+      tags: [OAuth]
+      summary: Mock-авторизация AmoCRM
+      responses:
+        '200': {description: Успешный ответ}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /v1/crm/mock/oauth/amocrm/refresh:
+    post:
+      tags: [OAuth]
+      summary: Обновить mock-токен AmoCRM
+      responses:
+        '200': {description: Успешный ответ}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+components:
+  securitySchemes:
+    UserID:
+      type: apiKey
+      in: header
+      name: X-User-ID
+      description: Идентификатор пользователя, переданный сервисом авторизации.
+  parameters:
+    Resource:
+      name: resource
+      in: path
+      required: true
+      schema: {type: string}
+    CRMType:
+      name: crm_type
+      in: path
+      required: true
+      schema: {type: string, enum: [amocrm]}
+  schemas:
+    JsonObject:
+      type: object
+      additionalProperties: true
+    ErrorResponse:
+      type: object
+      properties:
+        error: {type: string}
+  responses:
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}
+    Unauthorized:
+      description: Отсутствует или некорректен заголовок X-User-ID
+      content:
+        application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}
